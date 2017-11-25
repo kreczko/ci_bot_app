@@ -70,7 +70,6 @@ def bot():
     CI_KEY = 'ci_test'
     if request.method == 'GET':
         ci_test = rclient.get(CI_KEY)
-        print(ci_test)
         if ci_test:
             return str(ci_test)
         return "No entries"
@@ -80,7 +79,6 @@ def bot():
     # gitlab_event = request.headers.get('X-Gitlab-Event')
     # gitlab_token = request.headers.get('X-Gitlab-Token')
     # GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    print(str(request.data) + str(request.args))
     json = request.get_json()
     print(rclient.set(CI_KEY, str(json) + str(request.args)))
     return "OK"
