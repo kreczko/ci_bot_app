@@ -3,7 +3,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
 
-from ci_bot_app.extensions import login_manager
+from ci_bot_app.extensions import login_manager, cache
 from ci_bot_app.public.forms import LoginForm
 from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
@@ -61,3 +61,15 @@ def about():
     """About page."""
     form = LoginForm(request.form)
     return render_template('public/about.html', form=form)
+
+@blueprint.route('/bot/', methods=['GET', 'POST'])
+def bot():
+    if request.method == 'GET':
+        test = cache.get('test-item')
+        return str(test)
+
+    # store request
+    request_ip = ipaddress.ip_address(u'{0}'.format(request.remote_addr))
+    GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
+    test = cache.set('test-item', str(request))
+    return "OK"
