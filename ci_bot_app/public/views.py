@@ -67,9 +67,7 @@ def about():
 
 @blueprint.route('/bot/', methods=['GET', 'POST'])
 def bot():
-
     CI_KEY = 'ci_test'
-
     if request.method == 'GET':
         ci_test = rclient.get(CI_KEY)
         print(ci_test)
@@ -78,10 +76,11 @@ def bot():
         return "No entries"
 
     # store request
-    request_ip = ipaddress.ip_address(u'{0}'.format(request.remote_addr))
-    gitlab_event = request.headers.get('X-Gitlab-Event')
-    gitlab_token = request.headers.get('X-Gitlab-Token')
-    GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
+    # request_ip = ipaddress.ip_address(u'{0}'.format(request.remote_addr))
+    # gitlab_event = request.headers.get('X-Gitlab-Event')
+    # gitlab_token = request.headers.get('X-Gitlab-Token')
+    # GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
     print(str(request.data) + str(request.args))
-    print(rclient.set(CI_KEY, str(request.data) + str(request.args)))
+    json = request.get_json()
+    print(rclient.set(CI_KEY, str(json) + str(request.args)))
     return "OK"
