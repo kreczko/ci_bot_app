@@ -9,6 +9,7 @@ from ci_bot_app.public.forms import LoginForm
 from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
+import redis
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
@@ -65,11 +66,13 @@ def about():
 
 @blueprint.route('/bot/', methods=['GET', 'POST'])
 def bot():
-    tmp_file = '/tmp/test.file'
+    r = redis.from_url(os.environ.get("REDIS_URL"))
+    CI_KEY = 'ci_test'
+
     if request.method == 'GET':
-        if os.path.exists(tmp_file):
-            with open(tmp_file) as f:
-                return str(f.readlines())
+        ci_test = r.get(CI_KEY)
+        if ci_test:
+            return str(ci_test)
         return "No entries"
 
     # store request
@@ -77,6 +80,5 @@ def bot():
     gitlab_event = request.headers.get('X-Gitlab-Event')
     gitlab_token = request.headers.get('X-Gitlab-Token')
     GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    with open(tmp_file, 'w+') as f:
-        f.write(gitlab_event)
+    r.set(CI_KEY, gitlab_event)
     return "OK"

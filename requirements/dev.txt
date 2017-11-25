@@ -15,3 +15,6 @@ flake8-isort==2.2.2
 flake8-quotes==0.12.0
 isort==4.2.15
 pep8-naming==0.4.1
+
+# temporary for storage
+redis
