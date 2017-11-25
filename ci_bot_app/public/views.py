@@ -13,6 +13,7 @@ import redis
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
+rclient = redis.from_url(os.environ.get("REDIS_URL"))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -66,11 +67,12 @@ def about():
 
 @blueprint.route('/bot/', methods=['GET', 'POST'])
 def bot():
-    r = redis.from_url(os.environ.get("REDIS_URL"))
+
     CI_KEY = 'ci_test'
 
     if request.method == 'GET':
-        ci_test = r.get(CI_KEY)
+        ci_test = rclient.get(CI_KEY)
+        print(ci_test)
         if ci_test:
             return str(ci_test)
         return "No entries"
@@ -80,5 +82,5 @@ def bot():
     gitlab_event = request.headers.get('X-Gitlab-Event')
     gitlab_token = request.headers.get('X-Gitlab-Token')
     GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    r.set(CI_KEY, str(request))
+    print(rclient.set(CI_KEY, str(request)))
     return "OK"
