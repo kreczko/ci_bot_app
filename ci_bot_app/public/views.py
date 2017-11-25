@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Public section, including homepage and signup."""
+import os
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
 
@@ -68,7 +69,7 @@ def bot():
     if request.method == 'GET':
         if os.path.exists(tmp_file):
             with open(tmp_file) as f:
-                return f.readlines()
+                return str(f.readlines())
         return "No entries"
 
     # store request
