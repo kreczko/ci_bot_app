@@ -82,6 +82,6 @@ def bot():
     gitlab_event = request.headers.get('X-Gitlab-Event')
     gitlab_token = request.headers.get('X-Gitlab-Token')
     GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    print(str(request))
-    print(rclient.set(CI_KEY, str(request)))
+    print(str(request.data) + str(request.args))
+    print(rclient.set(CI_KEY, str(request.data) + str(request.args)))
     return "OK"
