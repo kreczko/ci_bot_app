@@ -64,12 +64,18 @@ def about():
 
 @blueprint.route('/bot/', methods=['GET', 'POST'])
 def bot():
+    tmp_file = '/tmp/test.file'
     if request.method == 'GET':
-        test = cache.get('test-item')
-        return str(test)
+        if os.path.exists(tmp_file):
+            with open(tmp_file) as f:
+                return f.readlines()
+        return "No entries"
 
     # store request
     request_ip = ipaddress.ip_address(u'{0}'.format(request.remote_addr))
+    gitlab_event = request.headers.get('X-Gitlab-Event')
+    gitlab_token = request.headers.get('X-Gitlab-Token')
     GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    test = cache.set('test-item', str(request))
+    with open(tmp_file, 'w+') as f:
+        f.write(gitlab_event)
     return "OK"
