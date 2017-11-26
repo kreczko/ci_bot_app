@@ -2,6 +2,7 @@
 """Public section, including homepage and signup."""
 import os
 from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import abort
 from flask_login import login_required, login_user, logout_user
 
 from ci_bot_app.extensions import login_manager, cache
@@ -65,20 +66,26 @@ def about():
     form = LoginForm(request.form)
     return render_template('public/about.html', form=form)
 
-@blueprint.route('/bot/', methods=['GET', 'POST'])
+@blueprint.route('/bot/', methods=['GET'])
 def bot():
     CI_KEY = 'ci_test'
-    if request.method == 'GET':
-        ci_test = rclient.get(CI_KEY)
-        if ci_test:
-            return str(ci_test)
-        return "No entries"
+    ci_test = rclient.get(CI_KEY)
+    if ci_test:
+        return str(ci_test)
+    return "No entries"
 
-    # store request
-    # request_ip = ipaddress.ip_address(u'{0}'.format(request.remote_addr))
-    # gitlab_event = request.headers.get('X-Gitlab-Event')
-    # gitlab_token = request.headers.get('X-Gitlab-Token')
-    # GITLAB_TOKEN =  os.environ.get('GITLAB_TOKEN', None)
-    json = request.get_json()
-    print(rclient.set(CI_KEY, str(json) + str(request.args)))
+@blueprint.route('/bot/', methods=['POST'])
+def bot_receive():
+    TOKEN = os.environ.get("X_Gitlab_Token")
+    if TOKEN is not None:
+        if request.headers.get('X-Gitlab-Token') != TOKEN:
+            abort(401)
+            return
+    # content = request.get_json(silent=True)
+    # js = json.dumps(content)
+    # producer.send(TOPIC_PREFIX + 'gitlabjson', js)
+    # producer.flush()
+    # bs = bson.dumps(content)
+    # producer.send(TOPIC_PREFIX + 'gitlabbson', bs)
+    # producer.flush()
     return "OK"
