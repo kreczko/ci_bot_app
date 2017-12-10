@@ -18,3 +18,4 @@ pep8-naming==0.4.1
 
 # temporary for storage
 redis
+confluent-kafka

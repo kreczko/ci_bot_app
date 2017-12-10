@@ -11,10 +11,26 @@ from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
 import redis
+from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
 rclient = redis.from_url(os.environ.get("REDIS_URL"))
+
+TOPIC = "{}.test".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
+    conf = {
+        'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
+        'session.timeout.ms': 6000,
+        'default.topic.config': {'auto.offset.reset': 'smallest'},
+        'security.protocol': 'SASL_SSL',
+        'sasl.mechanisms': 'SCRAM-SHA-256',
+        'sasl.username': os.environ['CLOUDKARAFKA_USERNAME'],
+        'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD']
+    }
+
+PRODUCER = Producer(**conf)
+CONSUMER = Consumer(**conf)
+CONSUMER.subscribe([topic])
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -68,19 +84,45 @@ def about():
 
 @blueprint.route('/bot/', methods=['GET'])
 def bot():
-    CI_KEY = 'ci_test'
-    ci_test = rclient.get(CI_KEY)
-    if ci_test:
-        return str(ci_test)
-    return "No entries"
+    # CI_KEY = 'ci_test'
+    # ci_test = rclient.get(CI_KEY)
+    # if ci_test:
+    #     return str(ci_test)
+    # return "No entries"
+    msg = CONSUMER.poll(timeout=1.0)
+    if msg is None:
+        return "No entries"
+    if msg.error():
+    # Error or event
+        if msg.error().code() == KafkaError._PARTITION_EOF:
+        # End of partition event
+        return ('%% %s [%d] reached end at offset %d\n' %
+                                     (msg.topic(), msg.partition(), msg.offset()))
+        elif msg.error():
+            # Error
+            raise KafkaException(msg.error())
+    else:
+        # Proper message
+        sys.stderr.write('%% %s [%d] at offset %d with key %s:\n' %
+                                 (msg.topic(), msg.partition(), msg.offset(),
+                                  str(msg.key())))
+        return msg.value()
 
 @blueprint.route('/bot/', methods=['POST'])
 def bot_receive():
-    TOKEN = os.environ.get("X_Gitlab_Token")
+    TOKEN = os.environ.get("GITLAB_TOKEN")
+
     if TOKEN is not None:
         if request.headers.get('X-Gitlab-Token') != TOKEN:
             abort(401)
             return
+        try:
+            PRODUCER.produce(TOPIC, request.get_json(silent=True))
+        except:
+            sys.stderr.write('%% Local producer queue is full (%d messages awaiting delivery): try again\n' %
+                         len(PRODUCER))
+        PRODUCER.poll(0)
+        PRODUCER.flush()
     # content = request.get_json(silent=True)
     # js = json.dumps(content)
     # producer.send(TOPIC_PREFIX + 'gitlabjson', js)
