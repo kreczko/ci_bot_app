@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Public section, including homepage and signup."""
 import os
+import sys
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask import abort
 from flask_login import login_required, login_user, logout_user
@@ -93,19 +94,16 @@ def bot():
     if msg is None:
         return "No entries"
     if msg.error():
-    # Error or event
         if msg.error().code() == KafkaError._PARTITION_EOF:
-        # End of partition event
-        return ('%% %s [%d] reached end at offset %d\n' %
-                                     (msg.topic(), msg.partition(), msg.offset()))
+            out = '%% {} [{}] reached end at offset {}\n'
+            out = out.format(msg.topic(), msg.partition(), msg.offset())
+            return out
         elif msg.error():
-            # Error
             raise KafkaException(msg.error())
     else:
-        # Proper message
-        sys.stderr.write('%% %s [%d] at offset %d with key %s:\n' %
-                                 (msg.topic(), msg.partition(), msg.offset(),
-                                  str(msg.key())))
+        out = '%% {} [{}] at offset {} with key %s:\n'
+        out = out.format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()))
+        sys.stderr.write(out)
         return msg.value()
 
 @blueprint.route('/bot/', methods=['POST'])
