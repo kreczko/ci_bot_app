@@ -16,8 +16,6 @@ from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
-rclient = redis.from_url(os.environ.get("REDIS_URL"))
-
 TOPIC = "{}.test".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
 conf = {
         'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],

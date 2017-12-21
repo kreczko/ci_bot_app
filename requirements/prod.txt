@@ -37,5 +37,4 @@ Flask-Caching>=1.0.0
 Flask-DebugToolbar==0.10.1
 
 # temporary for storage
-redis
 confluent-kafka
