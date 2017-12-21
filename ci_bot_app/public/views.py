@@ -2,6 +2,7 @@
 """Public section, including homepage and signup."""
 import os
 import sys
+import json
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask import abort
 from flask_login import login_required, login_user, logout_user
@@ -69,7 +70,6 @@ def about():
 
 @blueprint.route('/bot/', methods=['POST'])
 def bot_receive():
-    import json
     TOPIC = "{}bot".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
     conf = {
             'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
