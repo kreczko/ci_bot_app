@@ -11,7 +11,7 @@ from ci_bot_app.public.forms import LoginForm
 from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
-import redis
+import json
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
@@ -30,8 +30,6 @@ conf = {
 }
 
 PRODUCER = Producer(**conf)
-CONSUMER = Consumer(**conf)
-CONSUMER.subscribe([topic])
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -83,28 +81,28 @@ def about():
     form = LoginForm(request.form)
     return render_template('public/about.html', form=form)
 
-@blueprint.route('/bot/', methods=['GET'])
-def bot():
-    # CI_KEY = 'ci_test'
-    # ci_test = rclient.get(CI_KEY)
-    # if ci_test:
-    #     return str(ci_test)
-    # return "No entries"
-    msg = CONSUMER.poll(timeout=1.0)
-    if msg is None:
-        return "No entries"
-    if msg.error():
-        if msg.error().code() == KafkaError._PARTITION_EOF:
-            out = '%% {} [{}] reached end at offset {}\n'
-            out = out.format(msg.topic(), msg.partition(), msg.offset())
-            return out
-        elif msg.error():
-            raise KafkaException(msg.error())
-    else:
-        out = '%% {} [{}] at offset {} with key %s:\n'
-        out = out.format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()))
-        sys.stderr.write(out)
-        return msg.value()
+# @blueprint.route('/bot/', methods=['GET'])
+# def bot():
+#     # CI_KEY = 'ci_test'
+#     # ci_test = rclient.get(CI_KEY)
+#     # if ci_test:
+#     #     return str(ci_test)
+#     # return "No entries"
+#     msg = CONSUMER.poll(timeout=1.0)
+#     if msg is None:
+#         return "No entries"
+#     if msg.error():
+#         if msg.error().code() == KafkaError._PARTITION_EOF:
+#             out = '%% {} [{}] reached end at offset {}\n'
+#             out = out.format(msg.topic(), msg.partition(), msg.offset())
+#             return out
+#         elif msg.error():
+#             raise KafkaException(msg.error())
+#     else:
+#         out = '%% {} [{}] at offset {} with key %s:\n'
+#         out = out.format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()))
+#         sys.stderr.write(out)
+#         return msg.value()
 
 @blueprint.route('/bot/', methods=['POST'])
 def bot_receive():
@@ -114,18 +112,11 @@ def bot_receive():
         if request.headers.get('X-Gitlab-Token') != TOKEN:
             abort(401)
             return
-        try:
-            PRODUCER.produce(TOPIC, request.get_json(silent=True))
-        except:
-            sys.stderr.write('%% Local producer queue is full (%d messages awaiting delivery): try again\n' %
-                         len(PRODUCER))
-        PRODUCER.poll(0)
+        content = request.get_json(silent=True)
+        js = json.dumps(content)
+        # bs = bson.dumps(content)
+
+        PRODUCER.produce(TOPIC, js)
         PRODUCER.flush()
-    # content = request.get_json(silent=True)
-    # js = json.dumps(content)
-    # producer.send(TOPIC_PREFIX + 'gitlabjson', js)
-    # producer.flush()
-    # bs = bson.dumps(content)
-    # producer.send(TOPIC_PREFIX + 'gitlabbson', bs)
-    # producer.flush()
+
     return "OK"
