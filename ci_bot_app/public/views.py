@@ -11,6 +11,7 @@ from ci_bot_app.public.forms import LoginForm
 from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
+import confluent_kafka
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
@@ -66,32 +67,8 @@ def about():
     form = LoginForm(request.form)
     return render_template('public/about.html', form=form)
 
-# @blueprint.route('/bot/', methods=['GET'])
-# def bot():
-#     # CI_KEY = 'ci_test'
-#     # ci_test = rclient.get(CI_KEY)
-#     # if ci_test:
-#     #     return str(ci_test)
-#     # return "No entries"
-#     msg = CONSUMER.poll(timeout=1.0)
-#     if msg is None:
-#         return "No entries"
-#     if msg.error():
-#         if msg.error().code() == KafkaError._PARTITION_EOF:
-#             out = '%% {} [{}] reached end at offset {}\n'
-#             out = out.format(msg.topic(), msg.partition(), msg.offset())
-#             return out
-#         elif msg.error():
-#             raise KafkaException(msg.error())
-#     else:
-#         out = '%% {} [{}] at offset {} with key %s:\n'
-#         out = out.format(msg.topic(), msg.partition(), msg.offset(), str(msg.key()))
-#         sys.stderr.write(out)
-#         return msg.value()
-
 @blueprint.route('/bot/', methods=['POST'])
 def bot_receive():
-    from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
     import json
     TOPIC = "{}bot".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
     conf = {
@@ -104,7 +81,7 @@ def bot_receive():
             'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD'],
     }
 
-    PRODUCER = Producer(**conf)
+    PRODUCER = confluent_kafka.Producer(**conf)
 
     TOKEN = os.environ.get("GITLAB_TOKEN")
 
