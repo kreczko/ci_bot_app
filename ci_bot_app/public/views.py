@@ -12,11 +12,12 @@ from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
 import json
+
 from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
-TOPIC = "{}.test".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
+TOPIC = "{}bot".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
 conf = {
         'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
         'session.timeout.ms': 6000,
