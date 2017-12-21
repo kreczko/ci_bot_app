@@ -11,24 +11,10 @@ from ci_bot_app.public.forms import LoginForm
 from ci_bot_app.user.forms import RegisterForm
 from ci_bot_app.user.models import User
 from ci_bot_app.utils import flash_errors
-import json
-
-from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 blueprint = Blueprint('public', __name__, static_folder='../static')
 
-TOPIC = "{}bot".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
-conf = {
-        'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
-        'session.timeout.ms': 6000,
-        'default.topic.config': {'auto.offset.reset': 'smallest'},
-        'security.protocol': 'SASL_SSL',
-        'sasl.mechanisms': 'SCRAM-SHA-256',
-        'sasl.username': os.environ['CLOUDKARAFKA_USERNAME'],
-        'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD'],
-}
 
-PRODUCER = Producer(**conf)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -105,6 +91,21 @@ def about():
 
 @blueprint.route('/bot/', methods=['POST'])
 def bot_receive():
+    from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
+    import json
+    TOPIC = "{}bot".format(os.environ['CLOUDKARAFKA_TOPIC_PREFIX'])
+    conf = {
+            'bootstrap.servers': os.environ['CLOUDKARAFKA_BROKERS'],
+            'session.timeout.ms': 6000,
+            'default.topic.config': {'auto.offset.reset': 'smallest'},
+            'security.protocol': 'SASL_SSL',
+            'sasl.mechanisms': 'SCRAM-SHA-256',
+            'sasl.username': os.environ['CLOUDKARAFKA_USERNAME'],
+            'sasl.password': os.environ['CLOUDKARAFKA_PASSWORD'],
+    }
+
+    PRODUCER = Producer(**conf)
+
     TOKEN = os.environ.get("GITLAB_TOKEN")
 
     if TOKEN is not None:
